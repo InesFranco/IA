@@ -2,14 +2,19 @@
 program(Board) :- draw_banner(), 
                 draw_board(Board),
                 take_input(Column),
+                check_valid_move(Column, Board),
                 place_piece(Column, 'X', Board, NewBoard),
                 program(NewBoard).
     
-
-
 take_input(I) :- writeln("Write Column followed by an '.'"),
                 read(I),
                 writeln("").
+
+
+check_valid_move(Column, Board) :- Column <= 1, 
+                                    Column <= 7, 
+                                    program(Board).
+
 
 place_piece(Column, Piece, [H|[]] , [X|[]]) :- replace(H, Column, Piece, X). 
 place_piece(Column, Piece, [H,S|T], [X,S|T]) :- nth1(Column,S,Piece),
