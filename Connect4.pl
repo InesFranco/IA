@@ -7,15 +7,22 @@ program(Board) :- draw_banner(),
     
 
 
-take_input(I) :- writeln("Write Column followed by a '.'"),
+take_input(I) :- writeln("Write Column followed by an '.'"),
                 read(I),
                 writeln("").
 
-place_piece(C, P, B, NB) :- place_piece1(C, 1, P, B, NB).
-place_piece1(C, C, P, [[' '|T]|R] , [[P|T]|R]).
-place_piece1(C, N, P, [[H|T]|R], [[H|T1]|R]) :- N1 is N + 1
-                                    ,place_piece1(C, N1, P, [T|R], [T1|R]).
+place_piece(Column, Piece, [H|[]] , [X|[]]) :- replace(H, Column, Piece, X). 
+place_piece(Column, Piece, [H,S|T], [X,S|T]) :- nth1(Column,S,Piece),
+                                                replace(H, Column, Piece, X).
+place_piece(Column, Piece, [H|T], [H|R]) :- nth1(Column,H,' '),
+                                            place_piece(Column, Piece, T , R).
+                                            
 
+/*returns a new array X at position with piece*/
+replace(A, Position, Piece, X) :- replace1(A, Position, 1, Piece, X ).
+replace1([_|T], N, N , Piece, [Piece|T]).
+replace1([H|T], Position, N , Piece, [H|R] ) :- N1 is N+1, replace1(T, Position, N1, Piece, R).
+                                            
 draw_board([]).
 draw_board(B) :-    writeln("| 1 | 2 | 3 | 4 | 5 | 6 | 7 |"),
                     writeln(" ___________________________"),
