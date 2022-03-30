@@ -1,23 +1,34 @@
 /*6X7 board*/
-program(Board) :- draw_banner(), 
+
+
+start_program() :- program([
+            [' ',' ',' ',' ',' ',' ',' '], 
+            [' ',' ',' ',' ',' ',' ',' '], 
+            [' ',' ',' ',' ',' ',' ',' '], 
+            [' ',' ',' ',' ',' ',' ',' '],
+            [' ',' ',' ',' ',' ',' ',' '], 
+            [' ',' ',' ',' ',' ',' ',' ']
+        ], 'X').
+
+program(Board, Player) :- draw_banner(), 
                 draw_board(Board),
                 take_input(Column),
                 check_valid_move(Column, Board),
-                place_piece(Column, 'X', Board, NewBoard),
-                program(NewBoard).
+                place_piece(Column, Player, Board, NewBoard),
+                Player = 'X' -> program(NewBoard, 'O');
+                program(NewBoard, 'X').
+                
     
 take_input(I) :- writeln("Write Column followed by an '.'"),
                 read(I),
                 writeln("").
 
-
-check_valid_move(Column, Board) :- Column <= 1, 
-                                    Column <= 7, 
-                                    program(Board).
+check_valid_move(Column, Board) :- integer(Column), between(1,7,Column) -> true; program(Board).
 
 
 place_piece(Column, Piece, [H|[]] , [X|[]]) :- replace(H, Column, Piece, X). 
-place_piece(Column, Piece, [H,S|T], [X,S|T]) :- nth1(Column,S,Piece),
+place_piece(Column, Piece, [H,S|T], [X,S|T]) :- nth1(Column,S,Y),
+                                                Y \= ' ',
                                                 replace(H, Column, Piece, X).
 place_piece(Column, Piece, [H|T], [H|R]) :- nth1(Column,H,' '),
                                             place_piece(Column, Piece, T , R).
@@ -56,15 +67,4 @@ draw_banner() :- writeln("       ___________"),
                  writeln("    [::::::::::: :::] )"),
                  writeln("                     [|] "),
                  writeln("").
-                 
-
-/*Board = 
-        program([
-            [' ',' ',' ',' ',' ',' ',' '], 
-            [' ',' ',' ',' ',' ',' ',' '], 
-            [' ',' ',' ',' ',' ',' ',' '], 
-            [' ',' ',' ',' ',' ',' ',' '],
-            [' ',' ',' ',' ',' ',' ',' '], 
-            [' ',' ',' ',' ',' ',' ',' ']
-        ]).*/
 
