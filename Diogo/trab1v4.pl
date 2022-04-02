@@ -78,7 +78,7 @@ player(_,'O').
 checkWin(NB,_/P/_,_,_/P/'W',(L,_)):-horizontal(NB,P,1,L).
 checkWin(NB,_/P/_,_,_/P/'W',(_,C)):-vertical(NB,P,1,C).
 checkWin(NB,_/P/_,_,_/P/'W',Cord):-diagonal(NB,P,Cord).
-checkWin([L1,L2,L3,L4,L5,L6],_/P/_,_,_/P/'W',(L,C)):-La is 7 - L,diagonal([L6,L5,L4,L3,L2,L1],P,(La,C)).
+checkWin(NB,_/P/_,_,_/P/'W',(L,C)):-length(NB,X),La is X + 1 - L,invert(NB,I),diagonal(I,P,(La,C)).
 checkWin(_,_,NEstado,NEstado,_).
 
 
@@ -110,3 +110,10 @@ getCol([_|R],N,C,E):-K is N + 1,getCol(R,K,C,E).
 
 line4([P,P,P,P|_],P).
 line4([_,X1,X2,X3,X4|R],P):-line4([X1,X2,X3,X4|R],P).
+
+
+
+invert(L,I):-invAux(L,[],I).
+
+invAux([],I,I).
+invAux([X|R],Aux,I):-invAux(R,[X|Aux],I).
