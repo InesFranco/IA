@@ -41,20 +41,24 @@ game(B,P):-draw(board(B)),play(B,P),nofinish(B,P).
 game().
 */
 
-game:-B=[
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' ']
-],draw(B),X=42,player(X,P),game(B,X/P/'-').
+game:-gamedim(6,7).
+
+gamedim(L,C):-build_board(L,C,B),draw(B),tiles(B,X),player(X,P),game(B,X/P/'-').
+
+build_board(L,C,B):-make_line(1,C,[' '],Line),make_board(1,L,[Line],B).
+
+make_line(X,X,L,L).
+make_line(N,X,Aux,L):-K is N + 1,make_line(K,X,[' '|Aux],L).
+
+make_board(X,X,B,B).
+make_board(N,X,[Line|R],B):-K is N + 1,make_board(K,X,[Line,Line|R],B).
 
 game(_,_/P/'W'):-writef('O player %w ganhou',[P]).
 game(_,0/_/_):-writeln('Empate').
 game(B,Estado):-play(B,NB,Estado,EstAux,Cord),checkWin(NB,Estado,EstAux,NEstado,Cord),draw(NB),game(NB,NEstado).
 
 
+tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 
 
 play(B,NB,Estado,NEstado,Cord):-read(Pos),place(B,Pos,NB,Estado,NEstado,1,Cord).
@@ -109,7 +113,6 @@ diagonalAux(B,L,(L,C),D):-getDiagonal(B,C,D).
 diagonalAux([_|R],N,(L,C),D):-K is N + 1,diagonalAux(R,K,(L,C),D).
 
 getDiagonal([],_,[]).
-getDiagonal(_,C,[]):-C > 7.
 getDiagonal([L|R],C,[E|D]):-getCol(L,1,C,E),Ca is C+1,getDiagonal(R,Ca,D).
 
 getCol([E|_],C,C,E).
