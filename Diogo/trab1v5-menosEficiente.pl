@@ -1,9 +1,5 @@
-/*
-Predicados para apresentar o tabuleiro na consola de prolog
-estes predicados não efetuam mudanças no tabuleiro
+:-dynamic(dim1/1).
 
-
-								divisão das linhas da tabela         mostrar a linha	*/
 draw(B):-header(B,Division),invert(B,I),showLines(I,Division).
 					
 header([L|_],Division):-length(L,X),columnum(1,X),division(0,X,'+',Division),writeln(Division).
@@ -19,31 +15,14 @@ showLines([L|R],Division):-showLine(L),writeln(Division),showLines(R,Division).
 showLine([]):-writeln('|').
 showLine([E|R]):-writef('| %w ',[E]),showLine(R).
 
-/*
-testes de representação
-
-draw([[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' ']
-]).
-
-*/
 
 
-/* 
-game logic
 
-game(B,P):-draw(board(B)),play(B,P),nofinish(B,P).
 
-game().
-*/
 
-game:-gamedim(6,7).
+game:-gamedim(6,7,4).
 
-gamedim(L,C):-build_board(L,C,B),draw(B),tiles(B,X),player(X,P),game(B,X/P/'-').
+gamedim(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(dim1(N)),player(X,P),game(B,X/P/'-').
 
 build_board(L,C,B):-make_line(1,C,[' '],Line),make_board(1,L,[Line],B).
 
@@ -53,12 +32,12 @@ make_line(N,X,Aux,L):-K is N + 1,make_line(K,X,[' '|Aux],L).
 make_board(X,X,B,B).
 make_board(N,X,[Line|R],B):-K is N + 1,make_board(K,X,[Line,Line|R],B).
 
-game(_,_/P/'W'):-writef('O player %w ganhou',[P]).
-game(_,0/_/_):-writeln('Empate').
+game(_,_/P/'W'):-writef('O player %w ganhou',[P]),retract(dim1(_)).
+game(_,0/_/_):-writeln('Empate'),retract(dim1(_)).
 game(B,Estado):-play(B,NB,Estado,EstAux,Cord),checkWin(NB,Estado,EstAux,NEstado,Cord),draw(NB),game(NB,NEstado).
 
 
-tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
+calc_tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 
 
 play(B,NB,Estado,NEstado,Cord):-read(Pos),place(B,Pos,NB,Estado,NEstado,1,Cord).
@@ -91,12 +70,12 @@ checkWin(_,_,NEstado,NEstado,_).
 
 
 
-horizontal([L|_],P,N,N):-line4(L,P).
+horizontal([L|_],P,N,N):-line(L,P).
 horizontal([_|R],P,N,M):-K is N + 1,horizontal(R,P,K,M).
 
 
 
-vertical(B,P,C,C):-vertAux1(B,L),line4(L,P).
+vertical(B,P,C,C):-vertAux1(B,L),line(L,P).
 vertical(B,P,N,C):-vertAux2(B,NB),K is N + 1,vertical(NB,P,K,C).
 
 vertAux1([],[]).
@@ -106,8 +85,8 @@ vertAux2([],[]).
 vertAux2([[_|L]|R1],[L|R2]):-vertAux2(R1,R2).
 
 
-diagonal(B,P,(L,C)):-X is L - C, X >= 0,L1 is 1+X,diagonalAux(B,1,(L1,1),Line),line4(Line,P).
-diagonal(B,P,(L,C)):-X is C - L + 1, X > 1,diagonalAux(B,1,(1,X),Line),line4(Line,P).
+diagonal(B,P,(L,C)):-X is L - C, X >= 0,L1 is 1+X,diagonalAux(B,1,(L1,1),Line),line(Line,P).
+diagonal(B,P,(L,C)):-X is C - L + 1, X > 1,diagonalAux(B,1,(1,X),Line),line(Line,P).
 
 diagonalAux(B,L,(L,C),D):-getDiagonal(B,C,D).
 diagonalAux([_|R],N,(L,C),D):-K is N + 1,diagonalAux(R,K,(L,C),D).
@@ -118,14 +97,24 @@ getDiagonal([L|R],C,[E|D]):-getCol(L,1,C,E),Ca is C+1,getDiagonal(R,Ca,D).
 getCol([E|_],C,C,E).
 getCol([_|R],N,C,E):-K is N + 1,getCol(R,K,C,E).
 
-
-
-line4([P,P,P,P|_],P).
-line4([_,X1,X2,X3,X4|R],P):-line4([X1,X2,X3,X4|R],P).
-
-
-
 invert(L,I):-invAux(L,[],I).
 
 invAux([],I,I).
 invAux([X|R],Aux,I):-invAux(R,[X|Aux],I).
+
+
+line(L,P):-dim1(X),lineX(L,P,0,X).
+
+lineX(_,_,X,X).
+lineX([P|R],P,N,X):-K is N + 1,lineX(R,P,K,X).
+lineX([_|R],P,N,X):-lineX(R,P,N,X).
+
+
+
+
+
+/*
+		MinMax
+		  Bot
+*/
+

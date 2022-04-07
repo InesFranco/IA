@@ -12,28 +12,6 @@ draw([R1,R2]):-writeln('\n  1   2'),writeln('+---+---+'),
 showLine([]):-writeln('|').
 showLine([E|R]):-writef('| %w ',[E]),showLine(R).
 
-/*
-testes de representação
-
-draw([[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' '],
-	[' ',' ',' ',' ',' ',' ',' ']
-]).
-
-*/
-
-
-/* 
-game logic
-
-game(B,P):-draw(board(B)),play(B,P),nofinish(B,P).
-
-game().
-*/
-
 game:-B=[
 	[' ',' '],
 	[' ',' ']
