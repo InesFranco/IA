@@ -22,7 +22,7 @@ showLine([E|R]):-writef('| %w ',[E]),showLine(R).
 
 game:-gamedim(6,7,4).
 
-gamedim(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(dim1(N)),player(X,P),game(B,X/P/'-').
+gamedim(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(dim1(N)),game(B,X/'X'/'-').
 
 build_board(L,C,B):-make_line(1,C,[' '],Line),make_board(1,L,[Line],B).
 
@@ -43,6 +43,7 @@ calc_tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 play(B,NB,Estado,NEstado,Cord):-read(Pos),place(B,Pos,NB,Estado,NEstado,1,Cord).
 
 
+
 place([],_,[],Estado,Estado,_,'-'):-writeln('jogada invalida').
 place([L|R],Pos,[NL|R],X/P/_,NEstado,N,(N,Pos)):-placeAux(L,Pos,P,NL,1),novoEstado(X/P/_,NEstado).
 place([L|R],Pos,[L|NR],Estado,NEstado,N,Cord):-K is N + 1,place(R,Pos,NR,Estado,NEstado,K,Cord).
@@ -52,12 +53,12 @@ placeAux([X|R],Pos,P,[X|NR],N):-K is N+1,placeAux(R,Pos,P,NR,K).
 
 
 
-novoEstado(X/_/_,K/NP/'-'):-K is X - 1, player(K,NP).
+novoEstado(X/P/_,K/NP/'-'):-K is X - 1, player(P,NP).
 
 
 
-player(P,'X'):-0 is (P mod 2).
-player(_,'O').
+player('O','X').
+player('X','O').
 
 
 
@@ -107,7 +108,7 @@ line(L,P):-dim1(X),lineX(L,P,0,X).
 
 lineX(_,_,X,X).
 lineX([P|R],P,N,X):-K is N + 1,lineX(R,P,K,X).
-lineX([_|R],P,N,X):-lineX(R,P,N,X).
+lineX([_|R],P,_,X):-lineX(R,P,0,X).
 
 
 
@@ -118,3 +119,41 @@ lineX([_|R],P,N,X):-lineX(R,P,N,X).
 		  Bot
 */
 
+
+% minimax( Pos, BestSucc, Val):
+%   Pos is a position, Val is its minimax value;
+%   best move from Pos leads to position BestSucc
+minimax( Pos, BestSucc, Val) :-
+   moves( Pos, PosList), !,      % Legal moves in Pos produce PosList
+   best( PosList, BestSucc, Val)
+   ; % Or
+   staticval( Pos, Val).         % Pos has no successors: evaluate statically
+   
+moves(_/_/_-B,PosList):-invert(B,[L|_]),empty_pos(L,1,[],PP). %TODO
+empty_pos([],_,PosList,PosList).
+empty_pos([' '|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,[N|Aux],PosList).   
+empty_pos([_|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,Aux,PosList).
+   
+   
+best( [Pos], Pos, Val) :-
+   minimax( Pos, _, Val), !.
+
+
+best( [Pos1 | PosList], BestPos, BestVal) :-
+   minimax( Pos1, _, Val1),
+   best( PosList, Pos2, Val2),
+   betterof( Pos1, Val1, Pos2, Val2, BestPos, BestVal).
+
+
+betterof( Pos0, Val0, Pos1, Val1, Pos0, Val0) :- % Pos0 better than Pos1
+	min_to_move( Pos0),     % MIN to move in Pos0
+	Val0 > Val1, !          % MAX prefers the greater value
+	; %Or 
+	max_to_move( Pos0),     % MAX to move in Pos0
+	Val0 < Val1, !.         % MIN prefers the lesser value
+
+
+betterof( Pos0, Val0, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better than Pos0
+
+max_to_move('X').
+min_to_move('O').
