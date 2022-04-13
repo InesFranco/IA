@@ -40,7 +40,7 @@ game(B,Estado):-play(B,NB,Estado,EstAux,Cord),checkWin(NB,Estado,EstAux,NEstado,
 calc_tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 
 
-play(B,NB,Estado,NEstado,Cord):-read(Pos),place(B,Pos,NB,Estado,NEstado,1,Cord).
+play(B,NB,Estado,NEstado,Cord):-moves(Estado-B-_,_),read(Pos),place(B,Pos,NB,Estado,NEstado,1,Cord).
 
 
 
@@ -129,10 +129,12 @@ minimax( Pos, BestSucc, Val) :-
    ; % Or
    staticval( Pos, Val).         % Pos has no successors: evaluate statically
    
-moves(_/_/_-B,PosList):-invert(B,[L|_]),empty_pos(L,1,[],PP). %TODO
+moves(Estado-B-(_),PosList):-invert(B,[L|_]),empty_pos(L,1,[],PP),findall(NEstado-NB-(Cord),playAI(B,Estado,NB,NEstado,PP,Cord),PosList).
 empty_pos([],_,PosList,PosList).
-empty_pos([' '|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,[N|Aux],PosList).   
-empty_pos([_|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,Aux,PosList).
+empty_pos([' '|R],N,Aux,PosList):-K is N + 1,!,empty_pos(R,K,[N|Aux],PosList).   
+empty_pos([_|R],N,Aux,PosList):-K is N + 1,!,empty_pos(R,K,Aux,PosList).
+
+playAI(B,Estado,NB,NEstado,PP,Cord):-member(PP,Pos),place(B,Pos,NB,Estado,NEstado,1,Cord),print([Cord]).
    
    
 best( [Pos], Pos, Val) :-
