@@ -1,8 +1,7 @@
 /*6X7 board*/
 start_program :- program([
-            [' ',' ',' '], 
-            [' ',' ',' '],
-            [' ',' ',' ']
+            [' ',' '], 
+            [' ',' ']
         ], 'X').
 
 program(Board, Player) :- draw_board(Board),
@@ -36,7 +35,7 @@ program(Board, Player) :- draw_board(Board),
 take_input(I) :- writeln('Write Column followed by a .'),
                 read(I),
                 nl.
-check_valid_move(Column, Board) :- integer(Column), between(1,3,Column) -> true; program(Board).
+check_valid_move(Column, Board) :- integer(Column), between(1,2,Column) -> true; program(Board).
 
 check_win(Board, Player, Column) :- check_rows(Board, Player);
                                     check_columns(Board, Player, Column);
@@ -46,11 +45,11 @@ check_win(Board, Player, Column) :- check_rows(Board, Player);
 
 
 check_diagonals(Board,Column,Player) :-  check_diagonal(Board, Column, Player, 0);
-                                        (Column1 is Column +1, Column1<3,check_diagonals(Board, Column1, Player)).
+                                        (Column1 is Column +1, Column1<2,check_diagonals(Board, Column1, Player)).
 check_diagonals([H|T], Column, Player) :- check_diagonal(H, Column, Player, 0);
                                         check_diagonals(T, Column, Player).
 
-check_diagonal(_,_,_,3).
+check_diagonal(_,_,_,2).
 check_diagonal([H|T], Column, Player, Counter) :- nth1(Column, H, Y), 
                                                 Y \= Player, 
                                                 Column1 is Column +1, 
@@ -63,7 +62,7 @@ check_diagonal([H|T], Column, Player, Counter) :- nth1(Column, H, Player),
 
 
 check_columns(Board, Player, Column) :- check_columns1(Board, Player, Column, 0).
-check_columns1(_,_,_,3).
+check_columns1(_,_,_,2).
 check_columns1([H|T], Player, Column,_) :- nth1(Column, H, Y),
                                             Y \= Player,
                                             check_columns1(T, Player, Column,0).
@@ -73,7 +72,7 @@ check_columns1([H|T], Player, Column, Counter) :- Counter1 is Counter+1,
 
 check_rows([H|T], Player) :- check_row(H, Player, 0).
 check_rows([H|T], Player) :- check_rows(T, Player).
-check_row(_,_,3).
+check_row(_,_,2).
 check_row([H|T], Player, _) :- H \= Player, 
                                 check_row(T, Player, 0).
 check_row([Player|T], Player, Counter) :- Counter1 is Counter + 1, 
@@ -83,10 +82,10 @@ check_row([Player|T], Player, Counter) :- Counter1 is Counter + 1,
 place_piece(Column, Piece,Board,Board) :- Board = [H|T], nth1(Column, H, Y), Y \= ' ',!.
 place_piece(Column, Piece,Board, NBoard) :- place_piece1(Column, Piece, Board, NBoard).
 
-place_piece1(Column, Piece, [H|[]] , [X|[]]) :- replace(H, Column, Piece, X).
+place_piece1(Column, Piece, [H|[]] , [X|[]]) :- replace(H, Column, Piece, X),!.
 place_piece1(Column, Piece, [H,S|T], [X,S|T]) :- nth1(Column,S,Y),
                                                 Y \= ' ',
-                                                replace(H, Column, Piece, X).
+                                                replace(H, Column, Piece, X),!.
 place_piece1(Column, Piece, [H|T], [H|R]) :- nth1(Column,H,' '),
                                              place_piece1(Column, Piece, T , R).
                                             
@@ -98,18 +97,18 @@ replace1([H|T], Position, N , Piece, [H|R] ) :- N1 is N+1, replace1(T, Position,
                                             
 draw_board([]).
 draw_board(B) :-  writeln(''),
-                  writeln('| 1 | 2 | 3 |'),
-                  writeln("_____________"),
+                  writeln('   1     2   '),
                   draw_board1(B).
 
-draw_board1([]).
+draw_board1([]) :- writeln('+-----+-----+'). 
 draw_board1([H|T]) :- draw_line(H), 
                     draw_board1(T).
 
 
-draw_line(A) :- writef('| %w | %w | %w |', A),
-                writeln(""),
-                writeln("|___|___|___|").
+draw_line(A) :- writeln('+-----+-----+'),
+                 writef('|  %w  |  %w  |', A),
+               writeln('').
+               
                 
                 
 /*
@@ -174,9 +173,10 @@ betterof( Pos0, Val0, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better than Pos0
 moves((Player,Board), PostList) :- findall(NPos, possible_play((Player,Board), NPos), PostList), PostList \= [].
 
 
-possible_play((Player,Board), (Player,NewBoard)) :- member(X, [1,2]),
+possible_play((Player,Board), (NewPlayer,NewBoard)) :- member(X, [1,2]),
                                                    place_piece(X, Player, Board, NewBoard),
-                                                   Board \= NewBoard.
+                                                   Board \= NewBoard,
+                                                   (Player = 'X' -> NewPlayer = 'O';NewPlayer = 'X').
                                                    
 
 min_to_move((Player, _)) :- Player = 'O'.
