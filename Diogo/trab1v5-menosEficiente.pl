@@ -43,10 +43,10 @@ game:-gamedim(6,7,4).
 gameAI:-gamedimAI(3,3,3).
 
 % predicado que permite configurar o jogo(dimensao do tabuleiro e de linha)
-gamedim(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(win_dim(N)),asserta(line_dim(L)),game(B,X/'X'/'-').
+gamedim(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(win_dim(N)),game(B,X/'X'/'-').
 
 % predicado que permite configurar o jogo(dimensao do tabuleiro e de linha) com AI
-gamedimAI(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(win_dim(N)),asserta(line_dim(L)),gameAI(B,X/'X'/'-').
+gamedimAI(L,C,N):-build_board(L,C,B),draw(B),calc_tiles(B,X),asserta(win_dim(N)),gameAI(B,X/'X'/'-').
 
 % contrutor do tabuleiro de jogo
 build_board(L,C,B):-make_line(1,C,[' '],Line),make_board(1,L,[Line],B).
@@ -71,9 +71,10 @@ calc_tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 */
 
 % jogabilidade e apresentacao do jogo(jogar e mostrar tabuleiro/fim do jogo)
-game(_,_/P/'W'):-writef('O player %w ganhou',[P]),retract(win_dim(_)).
-game(_,0/_/'-'):-writeln('Empate'),retract(win_dim(_)).
+game(_,_/_/'T'):-writeln('Empate'),retract(win_dim(_)).
+game(_,_/_/P):-writef('O player %w ganhou',[P]),retract(win_dim(_)).
 game(B,Estado):-play(B,NB,Estado,NEstado),draw(NB),game(NB,NEstado).
+
 
 
 
@@ -97,6 +98,7 @@ placeAux([X|R],Pos,P,[P|R],Pos):-!,X=' '.
 placeAux([X|R],Pos,P,[X|NR],N):-K is N+1,placeAux(R,Pos,P,NR,K).
 
 % atualiza o total de casas livres e troca o jogador
+novoEstado(1/_/_,_/_/'T').
 novoEstado(X/P/_,K/NP/'-'):-K is X - 1, player(P,NP).
 player('O','X').
 player('X','O').
@@ -105,10 +107,10 @@ player('X','O').
 
 
 % condicoes de fim de jogo
-checkWin(NB,_/P/_,_,_/P/'W',(L,_)):-horizontal(NB,P,1,L),!.
-checkWin(NB,_/P/_,_,_/P/'W',(_,C)):-vertical(NB,P,1,C),!.
-checkWin(NB,_/P/_,_,_/P/'W',Cord):-diagonal(NB,P,Cord),!.
-checkWin(NB,_/P/_,_,_/P/'W',(L,C)):-length(NB,X),reverse(NB,I),La is X - L + 1,diagonal(I,P,(La,C)),!.
+checkWin(NB,_/P/_,_,_/_/P,(L,_)):-horizontal(NB,P,1,L),!.
+checkWin(NB,_/P/_,_,_/_/P,(_,C)):-vertical(NB,P,1,C),!.
+checkWin(NB,_/P/_,_,_/_/P,Cord):-diagonal(NB,P,Cord),!.
+checkWin(NB,_/P/_,_,_/_/P,(L,C)):-length(NB,X),reverse(NB,I),La is X - L + 1,diagonal(I,P,(La,C)),!.
 checkWin(_,_,NEstado,NEstado,_).
 
 % verifica a linha
@@ -158,59 +160,81 @@ lineX([_|R],P,_,X):-lineX(R,P,0,X).
 */
 
 % jogabilidade e apresentacao do jogo(jogar e mostrar tabuleiro/fim do jogo)
-gameAI(_,_/'X'/'W'):-writeln('O Bot ganhou'),retract(win_dim(_)).
-gameAI(_,_/'O'/'W'):-writeln('O player ganhou'),retract(win_dim(_)).
-gameAI(_,0/_/'-'):-writeln('Empate'),retract(win_dim(_)).
-gameAI(B,X/'X'/_):-writeln('AI turn'),playAI(B,NB,X/'X'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
-gameAI(B,Estado):-play(B,NB,Estado,NEstado),draw(NB),gameAI(NB,NEstado).
+gameAI(_,_/_/'T'):-writeln('Empate'),retract(win_dim(_)).
+gameAI(_,_/_/'X'):-writeln('O Bot ganhou'),retract(win_dim(_)).
+gameAI(_,_/_/'O'):-writeln('O player ganhou'),retract(win_dim(_)).
+gameAI(B,X/'X'/'-'):-writeln('AI turn'),playAI(B,NB,X/'X'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
+gameAI(B,X/'O'/'-'):-play(B,NB,X/'O'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
 
 
 % jogada da IA e atualizacao do estado
-playAI(B,NB,Estado,NEstado):-minimax(Estado-B,NEstado-NB,Val).
+playAI(B,NB,Estado,NEstado):-alphabeta(Estado-B,0,0,NEstado-NB,Val).
 
-checkAI(B,Estado,EstAux,X/P/'-',Cord):-checkWin(B,Estado,EstAux,X/P/'-',Cord).
-checkAI(B,Estado,EstAux,_/P/'W',Cord):-checkWin(B,Estado,EstAux,_/P/'W',Cord).
 
-% minimax( Pos, BestSucc, Val):
-%   Pos is a position, Val is its minimax value;
-%   best move from Pos leads to position BestSucc
-minimax( Pos, BestSucc, Val) :-
-   moves( Pos, PosList), !,      % Legal moves in Pos produce PosList
-   best( PosList, BestSucc, Val)
-   ; % Or
-   staticval( Pos, Val).         % Pos has no successors: evaluate statically
+
+% The alpha-beta algorithm
+
+alphabeta( Pos, Alpha, Beta, GoodPos, Val) :-
+	moves( Pos, PosList), !,
+	boundedbest( PosList, Alpha, Beta, GoodPos, Val)
+	; % Or
+	staticval( Pos, Val).       % Static value of Pos
+	
+
+boundedbest( [Pos | PosList], Alpha, Beta, GoodPos, GoodVal) :-
+	alphabeta( Pos, Alpha, Beta, _, Val),
+	goodenough( PosList, Alpha, Beta, Pos, Val, GoodPos, GoodVal).
+
+
+goodenough( [], _, _, Pos, Val, Pos, Val) :- !.   % No other candidate
+
+
+goodenough( _, Alpha, Beta, Pos, Val, Pos, Val) :-
+	min_to_move( Pos), Val > Beta, !   % Maximizer attained upper bound
+	; % Or
+	max_to_move( Pos), Val < Alpha, !. % Minimizer attained lower bound
+
+
+goodenough( PosList, Alpha, Beta, Pos, Val, GoodPos, GoodVal) :-
+	newbounds( Alpha, Beta, Pos, Val, NewAlpha, NewBeta),     % Refine bounds
+	boundedbest( PosList, NewAlpha, NewBeta, Pos1, Val1),
+	betterof( Pos, Val, Pos1, Val1, GoodPos, GoodVal).
+
+
+newbounds( Alpha, Beta, Pos, Val, Val, Beta) :-
+	min_to_move( Pos), Val > Alpha, !.         % Maximizer increased lower bound
+
+
+
+newbounds( Alpha, Beta, Pos, Val, Alpha, Val) :-
+	max_to_move( Pos), Val < Beta, !.          % Minimizer decreased upper bound
+	
+	
+	
+newbounds( Alpha, Beta, _, _, Alpha, Beta). % Otherwise bounds unchanged
+
+
+betterof( Pos, Val, Pos1, Val1, Pos, Val) :-   % Pos better than Pos1
+	min_to_move( Pos), Val > Val1, !
+	; % Or
+	max_to_move( Pos), Val < Val1, !.
+
+
+betterof( _, _, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better
+
    
-% gera a lista com todas as jogadas possive
+% gera a lista com todas as jogadas possiveis
 moves(X/P/'-'-B,PosList):-possible_play(B,PP),findall(NEstado-NB,move(B,X/P/'-',NB,NEstado,PP),PosList),PosList\=[].
 
-move(B,Estado,NB,NEstado,PP):-member(Pos,PP),place(B,Pos,NB,Estado,EstAux,1,Cord),checkWin(NB,Estado,EstAux,NEstado,Cord).
-     
- 
-   
-best( [Pos], Pos, Val) :-
-   minimax( Pos, _, Val), !.
+move(B,Estado,NB,NEstado,PP):-member(Pos,PP),place(B,Pos,NB,Estado,EstAux,1,Cord),checkAI(NB,Estado,EstAux,NEstado,Cord).
+
+checkAI(NB,Estado,EstAux,NEstado,Cord):-checkWin(NB,Estado,EstAux,NEstado,Cord).
 
 
-best( [Pos1 | PosList], BestPos, BestVal) :-
-   minimax( Pos1, _, Val1),
-   best( PosList, Pos2, Val2),
-   betterof( Pos1, Val1, Pos2, Val2, BestPos, BestVal).
+max_to_move(_/'X'/'-'-_).
+min_to_move(_/'O'/'-'-_).
 
 
-betterof( Pos0, Val0, Pos1, Val1, Pos0, Val0) :- % Pos0 better than Pos1
-	min_to_move( Pos0),     % MIN to move in Pos0
-	Val0 > Val1, !          % MAX prefers the greater value
-	; %Or 
-	max_to_move( Pos0),     % MAX to move in Pos0
-	Val0 < Val1, !.         % MIN prefers the lesser value
-
-
-betterof( Pos0, Val0, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better than Pos0
-
-max_to_move(_/'X'/_-_).
-min_to_move(_/'O'/_-_).
-
-
-staticval(_/'X'/'W'-_, 1).
-staticval(_/'O'/'W'-_, -1).
+staticval(_/_/'X'-_, 1).
+staticval(_/_/'O'-_, -1).
 staticval(_,0).
