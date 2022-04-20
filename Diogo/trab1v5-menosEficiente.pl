@@ -72,17 +72,18 @@ calc_tiles([L|R],X):-length(L,X1),length([L|R],X2),X is X1 * X2.
 
 % jogabilidade e apresentacao do jogo(jogar e mostrar tabuleiro/fim do jogo)
 game(_,_/_/'T'):-writeln('Empate'),retract(win_dim(_)).
-game(_,_/_/P):-writef('O player %w ganhou',[P]),retract(win_dim(_)).
+game(_,_/_/'X'):-writeln('O player X ganhou'),retract(win_dim(_)).
+game(_,_/_/'O'):-writeln('O player O ganhou'),retract(win_dim(_)).
 game(B,Estado):-play(B,NB,Estado,NEstado),draw(NB),game(NB,NEstado).
 
 
 
 
 % recebe uma board e retorna o indice das posicoes possiveis(comeca em 1)
-possible_play(Board,PosList):-reverse(Board,[L|_]),empty_pos(L,1,[],PosList).
+possible_play(Board,PosList):-reverse(Board,[L|_]),empty_pos(L,1,[],PosList),!.
 empty_pos([],_,PosList,PosList).
-empty_pos([' '|R],N,Aux,PosList):-K is N + 1,!,empty_pos(R,K,[N|Aux],PosList).   
-empty_pos([_|R],N,Aux,PosList):-K is N + 1,!,empty_pos(R,K,Aux,PosList).
+empty_pos([' '|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,[N|Aux],PosList).   
+empty_pos([_|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,Aux,PosList).
 
 % le a input do jogador e verifica se a jogada e possivel(so retorna se a jogada for valida)
 input_play(Board,Pos):-possible_play(Board,PP),read(Pos),member(Pos,PP).
@@ -107,10 +108,10 @@ player('X','O').
 
 
 % condicoes de fim de jogo
-checkWin(NB,_/P/_,_,_/_/P,(L,_)):-horizontal(NB,P,1,L),!.
-checkWin(NB,_/P/_,_,_/_/P,(_,C)):-vertical(NB,P,1,C),!.
-checkWin(NB,_/P/_,_,_/_/P,Cord):-diagonal(NB,P,Cord),!.
-checkWin(NB,_/P/_,_,_/_/P,(L,C)):-length(NB,X),reverse(NB,I),La is X - L + 1,diagonal(I,P,(La,C)),!.
+checkWin(NB,_/P/_,_/NP/_,_/NP/P,(L,_)):-horizontal(NB,P,1,L),!.
+checkWin(NB,_/P/_,_/NP/_,_/NP/P,(_,C)):-vertical(NB,P,1,C),!.
+checkWin(NB,_/P/_,_/NP/_,_/NP/P,Cord):-diagonal(NB,P,Cord),!.
+checkWin(NB,_/P/_,_/NP/_,_/NP/P,(L,C)):-length(NB,X),reverse(NB,I),La is X - L + 1,diagonal(I,P,(La,C)),!.
 checkWin(_,_,NEstado,NEstado,_).
 
 % verifica a linha
@@ -163,8 +164,8 @@ lineX([_|R],P,_,X):-lineX(R,P,0,X).
 gameAI(_,_/_/'T'):-writeln('Empate'),retract(win_dim(_)).
 gameAI(_,_/_/'X'):-writeln('O Bot ganhou'),retract(win_dim(_)).
 gameAI(_,_/_/'O'):-writeln('O player ganhou'),retract(win_dim(_)).
-gameAI(B,X/'X'/'-'):-writeln('AI turn'),playAI(B,NB,X/'X'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
-gameAI(B,X/'O'/'-'):-play(B,NB,X/'O'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
+gameAI(B,X/'X'/_):-writeln('AI turn'),playAI(B,NB,X/'X'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
+gameAI(B,X/'O'/_):-play(B,NB,X/'O'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
 
 
 % jogada da IA e atualizacao do estado
@@ -224,17 +225,17 @@ betterof( _, _, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better
 
    
 % gera a lista com todas as jogadas possiveis
-moves(X/P/'-'-B,PosList):-possible_play(B,PP),findall(NEstado-NB,move(B,X/P/'-',NB,NEstado,PP),PosList),PosList\=[].
+moves(X/P/'-'-B,PosList):-possible_play(B,PP),!,findall(NEstado-NB,move(B,X/P/'-',NB,NEstado,PP),PosList),PosList\=[].
 
-move(B,Estado,NB,NEstado,PP):-member(Pos,PP),place(B,Pos,NB,Estado,EstAux,1,Cord),checkAI(NB,Estado,EstAux,NEstado,Cord).
+move(B,Estado,NB,NEstado,PP):-member(Pos,PP),place(B,Pos,NB,Estado,EstAux,1,Cord),checkWin(NB,Estado,EstAux,NEstado,Cord).
 
 checkAI(NB,Estado,EstAux,NEstado,Cord):-checkWin(NB,Estado,EstAux,NEstado,Cord).
 
 
-max_to_move(_/'X'/'-'-_).
-min_to_move(_/'O'/'-'-_).
+max_to_move(_/'X'/_-_).
+min_to_move(_/'O'/_-_).
 
 
 staticval(_/_/'X'-_, 1).
 staticval(_/_/'O'-_, -1).
-staticval(_,0).
+staticval(_/_/'T'-_,0).
