@@ -1,5 +1,6 @@
 % definir o tamanho da linha como dinamico para permitir diferentes tamanhos de linha
 :-dynamic(win_dim/1).
+:-consult('alpha_beta.pl').
 
 /*
 	Componente visual
@@ -99,7 +100,7 @@ placeAux([X|R],Pos,P,[P|R],Pos):-!,X=' '.
 placeAux([X|R],Pos,P,[X|NR],N):-K is N+1,placeAux(R,Pos,P,NR,K).
 
 % atualiza o total de casas livres e troca o jogador
-novoEstado(1/_/_,_/_/'T').
+novoEstado(1/_/_,1/_/'T').
 novoEstado(X/P/_,K/NP/'-'):-K is X - 1, player(P,NP).
 player('O','X').
 player('X','O').
@@ -108,10 +109,10 @@ player('X','O').
 
 
 % condicoes de fim de jogo
-checkWin(NB,_/P/_,_/NP/_,_/NP/P,(L,_)):-horizontal(NB,P,1,L),!.
-checkWin(NB,_/P/_,_/NP/_,_/NP/P,(_,C)):-vertical(NB,P,1,C),!.
-checkWin(NB,_/P/_,_/NP/_,_/NP/P,Cord):-diagonal(NB,P,Cord),!.
-checkWin(NB,_/P/_,_/NP/_,_/NP/P,(L,C)):-length(NB,X),reverse(NB,I),La is X - L + 1,diagonal(I,P,(La,C)),!.
+checkWin(NB,_/P/_,X/NP/_,X/NP/P,(L,_)):-horizontal(NB,P,1,L),!.
+checkWin(NB,_/P/_,X/NP/_,X/NP/P,(_,C)):-vertical(NB,P,1,C),!.
+checkWin(NB,_/P/_,X/NP/_,X/NP/P,Cord):-diagonal(NB,P,Cord),!.
+checkWin(NB,_/P/_,X/NP/_,X/NP/P,(L,C)):-length(NB,Len),reverse(NB,I),La is Len - L + 1,diagonal(I,P,(La,C)),!.
 checkWin(_,_,NEstado,NEstado,_).
 
 % verifica a linha
@@ -169,59 +170,8 @@ gameAI(B,X/'O'/_):-play(B,NB,X/'O'/'-',NEstado),draw(NB),gameAI(NB,NEstado).
 
 
 % jogada da IA e atualizacao do estado
-playAI(B,NB,Estado,NEstado):-alphabeta(Estado-B,0,0,NEstado-NB,Val).
+playAI(B,NB,Estado,NEstado):-alphabeta(Estado-B,-inf,inf,NEstado-NB,Val).
 
-
-
-% The alpha-beta algorithm
-
-alphabeta( Pos, Alpha, Beta, GoodPos, Val) :-
-	moves( Pos, PosList), !,
-	boundedbest( PosList, Alpha, Beta, GoodPos, Val)
-	; % Or
-	staticval( Pos, Val).       % Static value of Pos
-	
-
-boundedbest( [Pos | PosList], Alpha, Beta, GoodPos, GoodVal) :-
-	alphabeta( Pos, Alpha, Beta, _, Val),
-	goodenough( PosList, Alpha, Beta, Pos, Val, GoodPos, GoodVal).
-
-
-goodenough( [], _, _, Pos, Val, Pos, Val) :- !.   % No other candidate
-
-
-goodenough( _, Alpha, Beta, Pos, Val, Pos, Val) :-
-	min_to_move( Pos), Val > Beta, !   % Maximizer attained upper bound
-	; % Or
-	max_to_move( Pos), Val < Alpha, !. % Minimizer attained lower bound
-
-
-goodenough( PosList, Alpha, Beta, Pos, Val, GoodPos, GoodVal) :-
-	newbounds( Alpha, Beta, Pos, Val, NewAlpha, NewBeta),     % Refine bounds
-	boundedbest( PosList, NewAlpha, NewBeta, Pos1, Val1),
-	betterof( Pos, Val, Pos1, Val1, GoodPos, GoodVal).
-
-
-newbounds( Alpha, Beta, Pos, Val, Val, Beta) :-
-	min_to_move( Pos), Val > Alpha, !.         % Maximizer increased lower bound
-
-
-
-newbounds( Alpha, Beta, Pos, Val, Alpha, Val) :-
-	max_to_move( Pos), Val < Beta, !.          % Minimizer decreased upper bound
-	
-	
-	
-newbounds( Alpha, Beta, _, _, Alpha, Beta). % Otherwise bounds unchanged
-
-
-betterof( Pos, Val, Pos1, Val1, Pos, Val) :-   % Pos better than Pos1
-	min_to_move( Pos), Val > Val1, !
-	; % Or
-	max_to_move( Pos), Val < Val1, !.
-
-
-betterof( _, _, Pos1, Val1, Pos1, Val1). % Otherwise Pos1 better
 
    
 % gera a lista com todas as jogadas possiveis
@@ -229,13 +179,10 @@ moves(X/P/'-'-B,PosList):-possible_play(B,PP),!,findall(NEstado-NB,move(B,X/P/'-
 
 move(B,Estado,NB,NEstado,PP):-member(Pos,PP),place(B,Pos,NB,Estado,EstAux,1,Cord),checkWin(NB,Estado,EstAux,NEstado,Cord).
 
-checkAI(NB,Estado,EstAux,NEstado,Cord):-checkWin(NB,Estado,EstAux,NEstado,Cord).
-
-
 max_to_move(_/'X'/_-_).
 min_to_move(_/'O'/_-_).
 
 
-staticval(_/_/'X'-_, 1).
-staticval(_/_/'O'-_, -1).
+staticval(X/_/'X'-_, X).
+staticval(X/_/'O'-_, -X).
 staticval(_/_/'T'-_,0).
