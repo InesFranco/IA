@@ -87,7 +87,7 @@ empty_pos([' '|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,[N|Aux],PosList).
 empty_pos([_|R],N,Aux,PosList):-K is N + 1,empty_pos(R,K,Aux,PosList).
 
 % le a input do jogador e verifica se a jogada e possivel(so retorna se a jogada for valida)
-input_play(Board,Pos):-possible_play(Board,PP),writeln('Sellecione a coluna(numero)'),read(Pos),member(Pos,PP).
+input_play(Board,Pos):-possible_play(Board,PP),writeln('Selecione a coluna(numero)'),read(Pos),member(Pos,PP).
 input_play(Board,Pos):-writeln('jogada invalida'),input_play(Board,Pos).
 
 % jogada do player e atualizacao do estado
