@@ -1,4 +1,8 @@
 import TileType.*
+import java.awt.*
+import java.awt.event.KeyEvent
+import javax.swing.*
+import javax.swing.plaf.basic.BasicSplitPaneUI
 
 val board = arrayListOf(
     arrayListOf(Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(WALL), Tile(WALL), Tile(WALL), Tile(WALL), Tile(WALL), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE)),
@@ -19,13 +23,23 @@ var boxCoordinates = arrayListOf(Pair(5, 7))
 val goalCoordinates = arrayListOf(Pair(17, 7))
 
 fun main() {
-
-    var win = false
-
     board[playerCoordinates.second][playerCoordinates.first].hasPlayer = true
     boxCoordinates.forEach { board[it.second][it.first].hasBox = true }
 
+    /*
+    val frame = JFrame()
+    val panel = JPanel(GridLayout(board[0].size, board.size))
+    val field = JTextField(20)
+    field.addKeyListener(MyKeyboard(panel))
+    panel.add(field)
+    frame.contentPane.add(panel)
+    frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+    frame.setSize(800, 600)
+    frame.isVisible = true
+    */
+
     printBoard()
+
 
     do {
         val move = inputMove()
@@ -44,6 +58,8 @@ fun main() {
 
         printBoard()
     } while (!checkWin())
+
+
     println("Win!")
 }
 
@@ -83,3 +99,4 @@ private fun printBoard() {
         println()
     }
 }
+
