@@ -34,26 +34,26 @@ replaceAux(X,N,E,[C|R],[C|NR]):-K is N + 1,replaceAux(X,K,E,R,NR).
 	(inicializacao do jogo)
 */
 
-game:-level(1,Estado-B),draw(Estado-B),game(Estado-B).
+game:-level(1,Estado-B),draw(Estado-B),game(Estado-B),!.
 
 game(Estado-B):-goal(Estado-B),draw(Estado-B),writeln('win'),!.
 game((Px,Py)/BoxList/O-B):-getDir(Dx,Dy),checkEmpty(B,Px,Py,Dx,Dy,X,Y),nl,makeMove(X,Y,Dx,Dy,B,BoxList,NBoxList),
-						   draw((X,Y)/NBoxList/O-B),game((X,Y)/NBoxList/O-B).
+						   draw((X,Y)/NBoxList/O-B),game((X,Y)/NBoxList/O-B),!.
 						   
-gameAI:-level(1,Estado-B),gameAI(Estado-B).
+gameAI:-level(1,Estado-B),gameAI(Estado-B),!.
 
 gameAI(Estado-B):-bestfirst(Estado-B,Solution),reverse(Solution,Inverted),printSolution(Inverted).
 printSolution([]):-writeln('Solved').
 printSolution([Estado-B|R]):-draw(Estado-B),sleep(0.5),printSolution(R).
 
 % selecionar a coordenada
-getDir(X,Y):-repeat,get_single_char(Code),char_code(Key,Code),dir(Key,X,Y).
+getDir(X,Y):-repeat,get_single_char(Code),dir(Code,X,Y).
 
 % teclas com direcoes de como o player se pode mexer
-dir('d',1,0).
-dir('a',-1,0).
-dir('s',0,1).
-dir('w',0,-1).
+dir(6,1,0).
+dir(2,-1,0).
+dir(14,0,1).
+dir(16,0,-1).
 
 % calcula a posicao e verifica se esta vazia
 checkEmpty(B,Px,Py,Dx,Dy,X,Y):-X is Px + (Dx),Y is Py + (Dy),nth0(Y,B,Line),!,nth0(X,Line,' '),!.

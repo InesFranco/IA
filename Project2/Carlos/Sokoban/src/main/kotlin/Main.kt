@@ -1,6 +1,4 @@
-import TileType.EMPTY_SPACE
-import TileType.WALL
-import TileType.GOAL
+import TileType.*
 
 val board = arrayListOf(
     arrayListOf(Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(WALL), Tile(WALL), Tile(WALL), Tile(WALL), Tile(WALL), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE), Tile(EMPTY_SPACE)),
@@ -17,40 +15,41 @@ val board = arrayListOf(
 )
 
 var playerCoordinates = Pair(11, 8)
-var boxCoordinates = Pair(5, 7)
-val goalCoordinates = Pair(17, 7)
+var boxCoordinates = arrayListOf(Pair(5, 7))
+val goalCoordinates = arrayListOf(Pair(17, 7))
 
 fun main() {
 
     var win = false
 
     board[playerCoordinates.second][playerCoordinates.first].hasPlayer = true
-    board[boxCoordinates.second][boxCoordinates.first].hasBox = true
+    boxCoordinates.forEach { board[it.second][it.first].hasBox = true }
 
     printBoard()
 
-    while (!win) {
+    do {
         val move = inputMove()
 
         val newPlayerPosition = Pair(playerCoordinates.first + move.first, playerCoordinates.second + move.second)
 
         if (board[newPlayerPosition.second][newPlayerPosition.first].hasBox) {
-            val newBoxPosition = Pair(boxCoordinates.first + move.first, boxCoordinates.second + move.second)
+            val newBoxPosition = Pair(newPlayerPosition.first + move.first, newPlayerPosition.second + move.second)
             if (board[newBoxPosition.second][newBoxPosition.first].type != WALL) {
-                updateBoxPosition(newBoxPosition)
+                updateBoxPosition(newBoxPosition,newPlayerPosition)
                 updatePlayerPosition(newPlayerPosition)
             }
         } else if (board[newPlayerPosition.second][newPlayerPosition.first].type != WALL) {
             updatePlayerPosition(newPlayerPosition)
         }
 
-        win = checkWin()
         printBoard()
-    }
+    } while (!checkWin())
+    println("Win!")
 }
 
 private fun checkWin(): Boolean {
-    return boxCoordinates == goalCoordinates
+    boxCoordinates.forEach { if(!goalCoordinates.contains(it)) return false}
+    return true
 }
 
 private fun updatePlayerPosition(newPlayerPosition: Pair<Int, Int>) {
@@ -59,10 +58,11 @@ private fun updatePlayerPosition(newPlayerPosition: Pair<Int, Int>) {
     board[playerCoordinates.second][playerCoordinates.first].hasPlayer = true
 }
 
-private fun updateBoxPosition(newBoxPosition: Pair<Int, Int>) {
-    board[boxCoordinates.second][boxCoordinates.first].hasBox = false
-    boxCoordinates = newBoxPosition
-    board[boxCoordinates.second][boxCoordinates.first].hasBox = true
+private fun updateBoxPosition(newBoxPosition: Pair<Int, Int>, oldBoxPosition: Pair<Int, Int>) {
+    board[oldBoxPosition.second][oldBoxPosition.first].hasBox = false
+    boxCoordinates.remove(oldBoxPosition)
+    boxCoordinates.add(newBoxPosition)
+    board[newBoxPosition.second][newBoxPosition.first].hasBox = true
 }
 
 private fun inputMove(): Pair<Int, Int> {
