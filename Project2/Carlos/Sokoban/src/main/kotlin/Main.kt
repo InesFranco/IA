@@ -100,3 +100,5 @@ private fun printBoard() {
     }
 }
 
+class Data(player:Pair<Int,Int>, box: ArrayList<Pair<Int, Int>>, goal: ArrayList<Pair<Int, Int>>, board: ArrayList<ArrayList<Tile>>)
+

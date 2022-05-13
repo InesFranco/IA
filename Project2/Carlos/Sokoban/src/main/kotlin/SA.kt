@@ -3,9 +3,9 @@ import kotlin.collections.ArrayList
 import kotlin.math.exp
 
 
-fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Int, getInitialSolution: (data: Int) -> Double,
-       getRandomNeigh: (u: Double, data: Int) -> Double, evalFunc: (u:Double, data: Int) -> Double,
-       isOptimum: (fu: Double, data: Int) -> Boolean, sense: String): Struct {
+fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Data, getInitialSolution: (data: Data) -> Double,
+       getRandomNeigh: (u: Double, data: Data) -> Double, evalFunc: (u:Double, data: Data) -> Double,
+       isOptimum: (fu: Double, data: Data) -> Boolean, sense: Sense): SAOut {
     var t = 0.0
     var T = Tmax
     var numEvaluations = 0
@@ -16,33 +16,32 @@ fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Int, getInitialSolut
     ++numEvaluations
 
     var z = 1
-    var F = ArrayList<Double>()
-    F[z] = fu
-    //F(z) = fu
+    val F = ArrayList<Double>()
+    F.add(fu)
     ++z
     while (!foundOptimum) {
         var i = 0
         while (i < k && !foundOptimum) {
-            var v = getRandomNeigh(u, data)
-            var fv = evalFunc(v, data)
+            val v = getRandomNeigh(u, data)
+            val fv = evalFunc(v, data)
             ++numEvaluations
             var dif = fv - fu
-            if (sense.equals("maximize")) {
+            if (sense == Sense.MAXIMIZE) {
                 dif = -dif
             }
             if (dif < 0) {
                 u = v
                 fu = fv
             } else {
-                var prob = p(fu, fv, T, sense)
-                var x = myRand()
+                val prob = p(fu, fv, T, sense)
+                val x = myRand()
                 if(x <= prob) {
                     u = v
                     fu = fv
                 }
             }
             ++i
-            F[z] = fu//F(z) = fu
+            F.add(fu)
             ++z
         }
 
@@ -58,17 +57,21 @@ fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Int, getInitialSolut
             }
         }
     }
-        println("BestCost: " + fu)
-        println("numEvaluations: "+ numEvaluations)
-        return Struct(T, numEvaluations, fu, Tmax, Tmin, R, k, u.solution, F, u)
+        println("BestCost: $fu")
+        println("numEvaluations: $numEvaluations")
+        return SAOut(T, numEvaluations, fu, Tmax, Tmin, R, k, u.solution, F, u)
 }
 
 fun Temp(t: Double, Tmax: Double, R: Double): Double =Tmax * exp(-R * t)
 
 fun myRand(): Double = Math.random()
 
-fun p(fu: Double, fv: Double,T: Double, sense: String): Double {
-    return if (sense.equals("maximize"))  exp((fv-fu) / (T*fu)) else exp((fu-fv) / (T*fu))
+fun p(fu: Double, fv: Double,T: Double, sense: Sense): Double {
+    return if (sense == Sense.MAXIMIZE)  exp((fv-fu) / (T*fu)) else exp((fu-fv) / (T*fu))
 }
 
-public class Struct(T: Double, NumEvaluations: Int, Cost: Double, Tmax: Double, Tmin: Double, R: Double, k: Int, u: Int, F: java.util.ArrayList<Double>, s: Double)
+public class SAOut(T: Double, NumEvaluations: Int, Cost: Double, Tmax: Double, Tmin: Double, R: Double, k: Int, u: Int, F: java.util.ArrayList<Double>, s: Double)
+
+public enum class Sense{
+    MAXIMIZE,MINIMIZE
+}
