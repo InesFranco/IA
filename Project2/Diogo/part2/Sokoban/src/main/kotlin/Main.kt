@@ -100,3 +100,15 @@ private fun printBoard() {
     }
 }
 
+data class Data(var player:Pair<Int,Int>, var box: ArrayList<Pair<Int, Int>>, var goal: ArrayList<Pair<Int, Int>>,
+                var board: ArrayList<ArrayList<Tile>>)
+
+data class U(var cost: Int, var solution: ArrayList<Data>)
+
+fun getInitialSolution(data: Data): U = U(0, arrayListOf(data))
+
+fun possibleMoves(data: Data): ArrayList<Pair<Int,Int>> {}
+
+fun getRandomNeigh(u: U, data: Data): U {
+
+}
