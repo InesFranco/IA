@@ -13,10 +13,6 @@ fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Data, getInitialSolu
     println("Initial cost: $fu")
     ++numEvaluations
 
-    var z = 1
-    val F = ArrayList<Double>()
-    F.add(fu)
-    ++z
     while (!foundOptimum) {
         var i = 0
         while (i < k && !foundOptimum) {
@@ -39,8 +35,6 @@ fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Data, getInitialSolu
                 }
             }
             ++i
-            F.add(fu)
-            ++z
             if (isOptimum(fu, data)) {
                 foundOptimum = true
             }
@@ -55,7 +49,7 @@ fun sa(Tmax: Double, Tmin: Double, R: Double, k: Int, data: Data, getInitialSolu
     }
     println("BestCost: $fu")
     println("numEvaluations: $numEvaluations")
-    return SAOut(T, numEvaluations, fu, Tmax, Tmin, R, k, u.solution, F, u)
+    return SAOut(T, numEvaluations, fu, Tmax, Tmin, R, k, u.solution, u)
 }
 
 fun Temp(t: Double, Tmax: Double, R: Double): Double =Tmax * exp(-R * t)
@@ -67,7 +61,7 @@ fun p(fu: Double, fv: Double,T: Double, sense: Sense): Double {
 }
 
 data class SAOut(var T: Double, var NumEvaluations: Int, var Cost: Double, var Tmax: Double, var Tmin: Double,
-                 var R: Double, var k: Int, var u: ArrayList<Data>, var F: java.util.ArrayList<Double>, var s: U)
+                 var R: Double, var k: Int, var u: ArrayList<Data>, var s: U)
 
 enum class Sense{
     MAXIMIZE,MINIMIZE

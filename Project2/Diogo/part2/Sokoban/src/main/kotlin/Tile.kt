@@ -14,4 +14,11 @@ class Tile(val type: TileType) {
         }
         print(type.char)
     }
+
+    fun copy(): Tile {
+        val ret = Tile(type)
+        ret.hasBox = hasBox
+        ret.hasPlayer = hasPlayer
+        return ret
+    }
 }
