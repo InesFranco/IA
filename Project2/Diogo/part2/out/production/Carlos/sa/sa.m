@@ -1,6 +1,6 @@
 function Res = SA(Tmax, Tmin, R, k, ...
-    data, getInitialSolution, getRandomNeigh, evalFunc, ...
-    isOptimum, sense)
+    data, sa.getInitialSolution, sa.getRandomNeigh, sa.evalFunc, ...
+    sa.isOptimum, sense)
     % Simulated Annealing (algorithm 2 for minimization of f)
     %
     % Step 1  Make T = Tmax  and Choose a solution u (at random)
@@ -8,7 +8,7 @@ function Res = SA(Tmax, Tmin, R, k, ...
     % Step 2  Select a neighbor of u, say v
     %         If f(v) < f(u) make u = v;
     %         Else make u = v with probability
-    %              p = exp((fu-fv)/(fu * T)))
+    %              sa.p = exp((fu-fv)/(fu * T)))
     %
     %         Repeat Step 2  k times
     %
@@ -29,8 +29,8 @@ function Res = SA(Tmax, Tmin, R, k, ...
     foundOptimum = false;
 
     % Choose a solution u (at random) and compute fu = f(u)
-    u = getInitialSolution(data);
-    fu = evalFunc(u, data);
+    u = sa.getInitialSolution(data);
+    fu = sa.evalFunc(u, data);
     fprintf('Initial cost: %d\n', fu);
     % Increment number of evaluations
     numEvaluations = numEvaluations + 1;
@@ -43,21 +43,21 @@ function Res = SA(Tmax, Tmin, R, k, ...
         % Step 2  Select a neighbor of u, say v
         %         If f(v) < f(u) make u = v;
         %         Else make u = v with probability
-        %              p = exp((fu-fv)/(fu * T)))
+        %              sa.p = exp((fu-fv)/(fu * T)))
         %
         %         Repeat Step 2   k times
         i = 0;
         while (i < k && ~foundOptimum)
             % Select a neighbor of u, say v.
-            v = getRandomNeigh(u, data);
+            v = sa.getRandomNeigh(u, data);
             % Evaluate v
-            fv = evalFunc(v, data);
+            fv = sa.evalFunc(v, data);
             % Increment number of evaluations
             numEvaluations = numEvaluations + 1;
 
             % If f(v) < f(u) (minimization) make u = v;
             % Else make u = v with probability
-            %   p = exp((fu-fv)/(fu T)))
+            %   sa.p = exp((fu-fv)/(fu T)))
             dif = fv-fu;
             if (strcmp(sense, 'maximize'))
                 dif = -dif;
@@ -69,8 +69,8 @@ function Res = SA(Tmax, Tmin, R, k, ...
                 u = v;
                 fu = fv;
             else
-                prob = p(fu, fv, T, sense)
-                x = myRand()
+                prob = sa.p(fu, fv, T, sense)
+                x = sa.myRand()
                 if (x <= prob)
                     % Accept this solution
                     u = v;
@@ -84,7 +84,7 @@ function Res = SA(Tmax, Tmin, R, k, ...
             z = z+1;
 
             % if optimum found then stop.
-            if isOptimum(fu, data)
+            if sa.isOptimum(fu, data)
                 foundOptimum = true;
             end
         end
@@ -93,7 +93,7 @@ function Res = SA(Tmax, Tmin, R, k, ...
             % Step 3  Make t = t+1; Set T = T(t)
             % see Eq.(4) of lecture notes
             t = t + 1;
-            T = Temp(t, Tmax, R);
+            T = sa.Temp(t, Tmax, R);
             % If  T < Tmin  Stop.
             if (T < Tmin)
                 break;
@@ -120,7 +120,7 @@ end
 %/////////////////////////////////////////////////////
 
 % Temperature actualization
-function newtemp = Temp(t, Tmax, R)
+function newtemp = sa.Temp(t, Tmax, R)
 %Outra hipotese: decrescimento quadratico
 % R = ]0,1[, e.g., R = 0.99 (mais lento) ou 0.1 (mais rapido)
 % newTemp = R*Tmax;
@@ -128,13 +128,13 @@ function newtemp = Temp(t, Tmax, R)
 end
 
 % Random number generator
-function r = myRand()
+function r = sa.myRand()
     r = rand();
 end
 
 
 % Probability function
-function x = p(fu, fv, T, sense)
+function x = sa.p(fu, fv, T, sense)
     if strcmp(sense, 'maximize')
         % Maximization problem
         x = exp((fv-fu) / (T*fu));
