@@ -102,7 +102,7 @@ fun evalFunc(u: U, data: Data): Double {
         goals.remove(closestGoal)
         total += closestDistance
     }
-    return 10*total + 0.2*playerDistance
+    return 500*total + 100*playerDistance + 0.1*u.solution.size
 }
 
 fun getRandomNeigh(u: U, data: Data): U {
@@ -159,5 +159,5 @@ fun isStuck(data: Data): Boolean {
 }
 
 fun isOptimum(fu: Double, data: Data): Boolean {
-    return checkWin(data)
+    return fu <= 0.1
 }
