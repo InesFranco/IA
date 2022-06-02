@@ -1,0 +1,1 @@
+data class State(val board: ArrayList<ArrayList<Tile>>, val playerPos : Pair<Int, Int>, val boxPos : Pair<Int, Int>, val goalPos : Pair<Int, Int>)
