@@ -1,3 +1,5 @@
+import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.random.Random
 
 
@@ -19,7 +21,8 @@ import kotlin.random.Random
 %         Else Stop.
 %*/
 
-public fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
+
+fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
     //Rate increment variable
     var t = 0.0
     //Step 1  Make T = Tmax and
@@ -32,11 +35,13 @@ public fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State
     //Choose a solution u (at random) and compute fu = f(u)
     var solution = getInitialSolution(data)
     printBoard(solution)
+
     var fu = evalFunc(solution);
     print("Initial cost: $fu");
 
     //Increment number of evaluations
     numEvaluations += 1
+
 
     var z = 1;
     z += 1;
@@ -61,6 +66,7 @@ public fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State
 
             //Increment number of evaluations
             numEvaluations += 1;
+            println("num Evaluations : $numEvaluations")
 
             // If f(v) < f(u) (minimization) make u = v;
             // Else make u = v with probability
@@ -81,27 +87,33 @@ public fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State
                     fu = fv;
                 }
             }
+
+
             i += 1;
             z += 1;
 
             //if optimum found then stop.
-            if (isOptimum(data)){
+            if (isOptimum(solution)){
                 foundOptimum = true;
+                print("Finished with : $numEvaluations iterations")
                 return solution
             }
 
-            if (!foundOptimum){
-                //Step 3  Make t = t+1; Set T = T(t)
-                //see Eq.(4) of lecture notes
-                t +=  1;
-                T = newtemp(t, Tmax, R);
-                //If  T < Tmin  Stop.
-                if (T < Tmin)
-                    break;
-            }
-
         }
+
+        if (!foundOptimum){
+            //Step 3  Make t = t+1; Set T = T(t)
+            //see Eq.(4) of lecture notes
+            t +=  1;
+            T = newtemp(t, Tmax, R);
+            //If  T < Tmin  Stop.
+            if (T < Tmin)
+                break;
+        }
+
+
     }
+        print("Didn't succeed after  $numEvaluations iterations")
         return null
 }
 
@@ -112,37 +124,95 @@ fun getInitialSolution(state:State) : State{
     return state
 }
 
-fun evalFunc(state : State): Int {
+fun evalFunc(state : State): Float {
     //manhattan distance
-    return (state.playerPos.first-state.boxPos.first) + (state.playerPos.second-state.boxPos.second)
-        + (state.goalPos.first-state.boxPos.first) + (state.goalPos.second-state.boxPos.second)
+    var score = evaluatePath(state)
+
+    return score + abs(state.playerPos.first-state.boxPos.first) + abs(state.playerPos.second-state.boxPos.second)
+        + abs(state.goalPos.first-state.boxPos.first) + abs(state.goalPos.second-state.boxPos.second)
 }
 
-fun getRandomNeigh(state:State) : State{
-    val moves = arrayOf(Pair(1,0), Pair(-1,0), Pair(0,1), Pair(0,-1))
-    val move = moves[Random.nextInt(0,4)]                       //randomly choose a move
+fun evaluatePath(state: State): Float{
+    var newPlayerPosX = state.playerPos.first
+    var newPlayerPosY = state.playerPos.second
+    var newBoxPosX = state.boxPos.first
+    var newBoxPosY = state.boxPos.second
 
-    var newPlayerPosX = state.playerPos.first + move.first
-    var newPlayerPosY = state.playerPos.second + move.second
-    var newBoxPosX = state.boxPos.first + move.first
-    var newBoxPosY = state.boxPos.second + move.second
-    var newBoard = state.board
+    for (i in state.path){
+        newPlayerPosX += i.first
+        newPlayerPosY += i.second
 
-    if(newPlayerPosX == state.boxPos.first && newPlayerPosY  == state.boxPos.second && state.board[newBoxPosY][newBoxPosX].type != TileType.WALL){
-        newBoard[state.boxPos.second][state.boxPos.first].hasBox = false;
-        newBoard[newBoxPosY][newBoxPosX].hasBox = true;
-        newBoard[state.playerPos.second][state.playerPos.first].hasPlayer = false
-        newBoard[newPlayerPosY][newPlayerPosX].hasPlayer = true
-        return State(newBoard, Pair(newPlayerPosX, newPlayerPosY), Pair(newBoxPosX, newBoxPosY), state.goalPos)
+        if(!movePlayer(state, Pair(newPlayerPosX, newPlayerPosY)))
+            return Float.POSITIVE_INFINITY
+        if(state.board[newPlayerPosY][newPlayerPosX].type == TileType.BOX){
+            newBoxPosX += i.first
+            newBoxPosY += i.second
+
+            //if cant move the box return penalty
+            if(!moveBox(state, Pair(newBoxPosX, newBoxPosY)))
+                return Float.POSITIVE_INFINITY
+        }
     }
-    else if(!(newPlayerPosX == state.boxPos.first && newPlayerPosY  == state.boxPos.second) && state.board[newPlayerPosY][newPlayerPosX].type != TileType.WALL){
-        newBoard[state.playerPos.second][state.playerPos.first].hasPlayer = false
-        newBoard[newPlayerPosY][newPlayerPosX].hasPlayer = true
-        return State(newBoard,Pair(newPlayerPosX, newPlayerPosY), state.boxPos, state.goalPos)
+    return -10f
+}
+
+fun getRandomNeigh(state: State): State {
+    val moves = arrayOf(Pair(1, 0), Pair(-1, 0), Pair(0, 1), Pair(0, -1))       //possible moves
+
+    val randomOp = Operation.values()[Random.nextInt(Operation.values().size)]
+
+    var move = moves[Random.nextInt(0, 4)]                       //randomly choose a move
+    var operation = Instruction(randomOp, move)
+
+    return alterPath(state, operation)
+}
+
+fun alterPath(state:State, operation : Instruction): State{
+    var newState = state.copy()
+    var newPath = state.path.map { it.copy() }
+    var newBoard = state.board.map { line -> line.map { it.copy() } }
+    newBoard[newState.boxPos.second][newState.boxPos.first].hasBox = true
+    newBoard[newState.playerPos.second][newState.playerPos.first].hasPlayer = true
+    newState.path = newPath as ArrayList<Pair<Int, Int>>
+    newState.board = newBoard as ArrayList<ArrayList<Tile>>
+
+
+
+    if(state.path.size == 0){
+        newState.path.add(operation.move)
     }
     else{
-        return state;
+        var randomIndex = Random.nextInt(0, newState.path.size)
+
+        when (operation.operation) {
+            Operation.ADD -> newState.path.add(randomIndex, operation.move)
+            Operation.REMOVE -> newState.path.removeAt(randomIndex)
+            Operation.ALTER -> newState.path[randomIndex] = operation.move
+        }
     }
+    return newState
+}
+
+
+private fun moveBox(state:State, newBoxPos: Pair<Int,Int>): Boolean{
+    if(state.board[newBoxPos.second][newBoxPos.first].type == TileType.EMPTY_SPACE){
+        state.boxPos = newBoxPos
+        state.board[state.boxPos.second][state.boxPos.first].hasBox = false;
+        state.board[newBoxPos.second][newBoxPos.first].hasBox = true;
+        return true
+    }
+    return false
+}
+
+private fun movePlayer(state:State, newPlayerPos: Pair<Int,Int>) : Boolean{
+    val type = state.board[newPlayerPos.second][newPlayerPos.first].type
+    if(type == TileType.EMPTY_SPACE ||type == TileType.BOX){
+        state.playerPos = newPlayerPos
+        state.board[state.playerPos.second][state.playerPos.first].hasPlayer = false;
+        state.board[newPlayerPos.second][newPlayerPos.first].hasPlayer = true;
+        return true
+    }
+    return false
 }
 
 private fun printBoard(state:State) {
@@ -161,17 +231,17 @@ fun newtemp (t: Double, Tmax:Double, R:Double) : Double{
     //Outra hipotese: decrescimento quadratico
     // R = ]0,1[, e.g., R = 0.99 (mais lento) ou 0.1 (mais rapido)
     // newTemp = R*Tmax;
-    return Tmax * Math.exp(-R * t)
+    return Tmax * exp(-R * t)
 }
 
 //Random number generator
-fun myRand() : Int{
-    return Random.nextInt()
+fun myRand() : Double {
+    return Math.random()
 }
 
 
 //Probability function
-fun p(fu:Int, fv:Int, T:Double):Double{
+fun p(fu: Float, fv: Float, T:Double):Double{
     return Math.exp((fu-fv) / (T*fu))
 }
 
