@@ -4,4 +4,4 @@ enum class Moves(var cord: Pair<Int, Int>) {
     constructor(x: Int, y: Int) : this(Pair(x, y))
 }
 
-operator fun Pair<Int, Int> .unaryMinus() = Pair(-first, -second)
+operator fun Pair<Int, Int> .unaryMinus() = Pair(-first, -second)       // calcular vetor inverso

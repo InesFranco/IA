@@ -1,9 +1,9 @@
-class Tile(val type: TileType) {
+class Tile(val type: TileType) {    // compusicao do tabuleiro
 
     var hasPlayer = false
     var hasBox = false
 
-    fun printChar() {
+    fun printChar() {               // printa o char associado ao tile
         if (hasPlayer) {
             print(TileType.PLAYER.char)
             return
@@ -15,7 +15,7 @@ class Tile(val type: TileType) {
         print(type.char)
     }
 
-    fun copy(): Tile {
+    fun copy(): Tile {             // para impedir problemas de referencias durante a copia das tiles
         val ret = Tile(type)
         ret.hasBox = hasBox
         ret.hasPlayer = hasPlayer
