@@ -20,7 +20,8 @@ import kotlin.random.Random
 %         If  T >= Tmin  go to Step 2;
 %         Else Stop.
 %*/
-
+var initialPlayerPos: Pair<Int, Int>? = null
+var initialBoxPos: Pair<Int, Int>? = null
 
 fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
     //Rate increment variable
@@ -31,13 +32,14 @@ fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
     var numEvaluations = 0
     //Variable used to specify stop criteria
     var foundOptimum = false
+    initialPlayerPos = data.playerPos
+    initialBoxPos = data.boxPos
 
     //Choose a solution u (at random) and compute fu = f(u)
     var solution = getInitialSolution(data)
     printBoard(solution)
 
     var fu = evalFunc(solution);
-    print("Initial cost: $fu");
 
     //Increment number of evaluations
     numEvaluations += 1
@@ -59,14 +61,13 @@ fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
         while (i < k && !foundOptimum){
             //Select a neighbor of u, say v.
             var neighbor = getRandomNeigh(solution);
-            printBoard(neighbor)
 
             //Evaluate v
             var fv = evalFunc(neighbor);
 
             //Increment number of evaluations
             numEvaluations += 1;
-            println("num Evaluations : $numEvaluations")
+
 
             // If f(v) < f(u) (minimization) make u = v;
             // Else make u = v with probability
@@ -75,19 +76,20 @@ fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
 
             if (dif < 0){
                 solution = neighbor;
+                printBoard(solution)
                 fu = fv;
             }
 
             else{
                 val prob = p(fu, fv, T)
                 val x = myRand()
-                if (x <= prob){
+                if (x <= prob && fv != Float.POSITIVE_INFINITY){
                     //Accept this solution
+                    printBoard(solution)
                     solution = neighbor;
                     fu = fv;
                 }
             }
-
 
             i += 1;
             z += 1;
@@ -110,10 +112,8 @@ fun SA(Tmax: Double, Tmin:Double, R: Double, k: Int, data: State) : State? {
             if (T < Tmin)
                 break;
         }
-
-
     }
-        print("Didn't succeed after  $numEvaluations iterations")
+        println("Didn't succeed after  $numEvaluations iterations")
         return null
 }
 
@@ -125,11 +125,7 @@ fun getInitialSolution(state:State) : State{
 }
 
 fun evalFunc(state : State): Float {
-    //manhattan distance
-    var score = evaluatePath(state)
-
-    return score + abs(state.playerPos.first-state.boxPos.first) + abs(state.playerPos.second-state.boxPos.second)
-        + abs(state.goalPos.first-state.boxPos.first) + abs(state.goalPos.second-state.boxPos.second)
+    return evaluatePath(state)
 }
 
 fun evaluatePath(state: State): Float{
@@ -138,90 +134,127 @@ fun evaluatePath(state: State): Float{
     var newBoxPosX = state.boxPos.first
     var newBoxPosY = state.boxPos.second
 
+
     for (i in state.path){
         newPlayerPosX += i.first
         newPlayerPosY += i.second
 
-        if(!movePlayer(state, Pair(newPlayerPosX, newPlayerPosY)))
-            return Float.POSITIVE_INFINITY
-        if(state.board[newPlayerPosY][newPlayerPosX].type == TileType.BOX){
+        if(newPlayerPosY == newBoxPosY && newBoxPosX == newPlayerPosX){
             newBoxPosX += i.first
             newBoxPosY += i.second
 
             //if cant move the box return penalty
-            if(!moveBox(state, Pair(newBoxPosX, newBoxPosY)))
+            if(board[newBoxPosY][newBoxPosX].type != TileType.EMPTY_SPACE
+                && board[newBoxPosY][newBoxPosX].type != TileType.GOAL ){
                 return Float.POSITIVE_INFINITY
+            }
+            if(isBoxStuck(state, Pair(newBoxPosX, newBoxPosY))){
+                return Float.POSITIVE_INFINITY
+            }
         }
+        if(board[newPlayerPosY][newPlayerPosX].type != TileType.EMPTY_SPACE)
+            return Float.POSITIVE_INFINITY
     }
-    return -10f
+
+    var finalScore = 0.5f*(abs(newPlayerPosX-newBoxPosX) + abs(newPlayerPosY-newBoxPosY)).toFloat()
+    + abs(state.goalPos.first-newBoxPosX) + abs(state.goalPos.second-newBoxPosY)
+
+    return finalScore
+}
+
+fun isBoxStuck(state: State, boxPos: Pair<Int,Int>): Boolean {
+    if((state.board[boxPos.second][boxPos.first-1].type == TileType.WALL
+                || state.board[boxPos.second][boxPos.first+1].type == TileType.WALL)
+        &&
+        (state.board[boxPos.second+1][boxPos.first].type == TileType.WALL
+                || state.board[boxPos.second-1][boxPos.first].type == TileType.WALL))
+        return true
+    return false
 }
 
 fun getRandomNeigh(state: State): State {
-    val moves = arrayOf(Pair(1, 0), Pair(-1, 0), Pair(0, 1), Pair(0, -1))       //possible moves
-
     val randomOp = Operation.values()[Random.nextInt(Operation.values().size)]
-
-    var move = moves[Random.nextInt(0, 4)]                       //randomly choose a move
+    var move = Moves.values()[Random.nextInt(0, 4)]                       //randomly choose a move
     var operation = Instruction(randomOp, move)
 
     return alterPath(state, operation)
 }
 
-fun alterPath(state:State, operation : Instruction): State{
+fun alterPath(state:State, instruction : Instruction): State{
     var newState = state.copy()
     var newPath = state.path.map { it.copy() }
     var newBoard = state.board.map { line -> line.map { it.copy() } }
-    newBoard[newState.boxPos.second][newState.boxPos.first].hasBox = true
-    newBoard[newState.playerPos.second][newState.playerPos.first].hasPlayer = true
     newState.path = newPath as ArrayList<Pair<Int, Int>>
     newState.board = newBoard as ArrayList<ArrayList<Tile>>
 
     if(state.path.size == 0){
-        newState.path.add(operation.move)
+        newState.path.add(instruction.move.cord)
     }
     else{
         var randomIndex = Random.nextInt(0, newState.path.size)
 
-        when (operation.operation) {
-            Operation.ADD -> newState.path.add(randomIndex, operation.move)
-            Operation.REMOVE -> newState.path.removeAt(randomIndex)
-            Operation.ALTER -> newState.path[randomIndex] = operation.move
+        when (instruction.operation) {
+            Operation.ADD -> newState.path.add(Random.nextInt(0, newState.path.size+1), instruction.move.cord)
+            //Operation.REMOVE -> newState.path.removeAt(Random.nextInt(0, newState.path.size))
+            Operation.ALTER -> newState.path[Random.nextInt(0, newState.path.size)] = instruction.move.cord
         }
     }
     return newState
 }
 
 
-private fun moveBox(state:State, newBoxPos: Pair<Int,Int>): Boolean{
-    if(state.board[newBoxPos.second][newBoxPos.first].type == TileType.EMPTY_SPACE){
-        state.boxPos = newBoxPos
-        state.board[state.boxPos.second][state.boxPos.first].hasBox = false;
-        state.board[newBoxPos.second][newBoxPos.first].hasBox = true;
-        return true
-    }
-    return false
-}
-
-private fun movePlayer(state:State, newPlayerPos: Pair<Int,Int>) : Boolean{
-    val type = state.board[newPlayerPos.second][newPlayerPos.first].type
-    if(type == TileType.EMPTY_SPACE ||type == TileType.BOX){
-        state.playerPos = newPlayerPos
-        state.board[state.playerPos.second][state.playerPos.first].hasPlayer = false;
-        state.board[newPlayerPos.second][newPlayerPos.first].hasPlayer = true;
-        return true
-    }
-    return false
-}
-
 private fun printBoard(state:State) {
+    var newPlayerPosX = state.playerPos.first
+    var newPlayerPosY = state.playerPos.second
+    var newBoxPosX = state.boxPos.first
+    var newBoxPosY = state.boxPos.second
+
+
+    for (i in state.path){
+        newPlayerPosX += i.first
+        newPlayerPosY += i.second
+
+        if(newPlayerPosY == newBoxPosY && newBoxPosX == newPlayerPosX) {
+            newBoxPosX += i.first
+            newBoxPosY += i.second
+        }
+    }
+    state.board[state.boxPos.second][state.boxPos.first].hasBox = false
+    state.board[state.playerPos.second][state.playerPos.first].hasPlayer = false
+
+    state.board[newPlayerPosY][newPlayerPosX].hasPlayer = true
+    state.board[newBoxPosY][newBoxPosX].hasBox = true
+
     for (row in state.board) {
         row.forEach { it.printChar() }
         println()
     }
+
+    state.board[newPlayerPosY][newPlayerPosX].hasPlayer = false
+    state.board[newBoxPosY][newBoxPosX].hasBox = false
+    state.board[state.boxPos.second][state.boxPos.first].hasBox = true
+    state.board[state.playerPos.second][state.playerPos.first].hasPlayer = true
+
 }
 
 fun isOptimum(state:State):Boolean{
-    return state.boxPos.first == state.goalPos.first && state.boxPos.second == state.goalPos.second
+    var newPlayerPosX = state.playerPos.first
+    var newPlayerPosY = state.playerPos.second
+    var newBoxPosX = state.boxPos.first
+    var newBoxPosY = state.boxPos.second
+
+
+    for (i in state.path){
+        newPlayerPosX += i.first
+        newPlayerPosY += i.second
+
+        if(newPlayerPosY == newBoxPosY && newBoxPosX == newPlayerPosX) {
+            newBoxPosX += i.first
+            newBoxPosY += i.second
+        }
+    }
+
+    return newBoxPosX == state.goalPos.first && newBoxPosY == state.goalPos.second
 }
 
 //Temperature actualization
