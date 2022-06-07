@@ -5,7 +5,7 @@ plugins {
     application
 }
 
-group = "me.ines"
+group = "me.ines_"
 version = "1.0-SNAPSHOT"
 
 repositories {

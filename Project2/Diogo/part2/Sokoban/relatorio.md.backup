@@ -109,7 +109,7 @@ Existe a possibilidade de concretizar três tipos de operações sobre o caminho
 * REMOVE : Retira uma posição aleatória do caminho
 * ALTER : Remove uma parte do caminho. Esta instrução é extremamente importante para evitar entradas em ciclos porque dá a possibilidade de reconstruir um caminho onde a caixa ficou presa. Também é uma forma de procurar caminhos que possam ser mais curtos.
 
-Estas operações retornam um estado com o novo caminho que vai ser avaliado pelo método *evalFunc*. Este método apenas chama o método *evaluatePath* que vai percorrer o caminho e, caso este seja inválido, retorna infinito positivo. Um caminho é inválido se passar por uma parede ou se a caixa ficar presa num canto. Para favorecer caminhos mais curtos foi adicionado um modificador que multiplica pelo tamanho do caminho.
+Estas operações retornam um estado com o novo caminho que vai ser avaliado pelo método *evalFunc*. Este método apenas chama o método *evaluatePath* que vai percorrer o caminho e, caso este seja inválido, retorna infinito positivo. Um caminho é inválido se passar por uma parede ou se a caixa ficar presa num canto. Para favorecer caminhos mais curtos foi adicionado um modificador que multiplica com o tamanho do caminho.
 
 
 Quando for encontrada uma solução o algoritmo retorna o estado final que contém o caminho percorrido. Como o algoritmo Simulated annealing não é o mais indicado para o tipo de problema este caminho final continua a ter movimentos não ótimos. Porém observou-se que com esta versão otimizada os caminhos gerados estavam entre os 40 e os 200 movimentos enquanto que com a versão original os movimentos estavam entre os 100 e os 1000. 
