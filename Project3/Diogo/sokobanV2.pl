@@ -83,7 +83,7 @@ toStateAux(['@'|R], (X, Y), B, NB, Aux, Out):-X1 is X + 1, toStateAux(R, (X1, Y)
 toStateAux(['B'|R], (X, Y), B, NB, Aux, Out):-X1 is X + 1, atom_concat(b,B,Box), assertz(box(Box)), B1 is B + 1, toStateAux(R, (X1, Y), B1, NB, [at(Box, (X, Y))|Aux], Out).
 toStateAux([_|R], (X, Y), B, NB, Aux, Out):-X1 is X + 1, toStateAux(R, (X1, Y), B, NB, Aux, Out).
 
-getLevel(Lvl):-repeat,read(Code),level(Code, Lvl).
+getLevel(Lvl):-repeat,writeln('level? (1..3)'),read(Code),level(Code, Lvl).
 
 % selecionar a coordenada
 getDir(X,Y):-repeat,get_single_char(Code),dir(Code,X,Y).
